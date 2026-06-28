@@ -651,8 +651,21 @@ function MeetingRoom({ session }) {
       });
       setRemoteTracks(next);
     };
-    room.on(RoomEvent.TrackSubscribed, refreshRemoteTracks);
-    room.on(RoomEvent.TrackUnsubscribed, refreshRemoteTracks);
+    room.on(RoomEvent.TrackSubscribed, (track) => {
+      if (track.kind === Track.Kind.Audio) {
+        const el = track.attach();
+        el.className = 'livekit-audio';
+        document.body.appendChild(el);
+      }
+      refreshRemoteTracks();
+    });
+    room.on(RoomEvent.TrackUnsubscribed, (track) => {
+      if (track.kind === Track.Kind.Audio) track.detach().forEach(el => el.remove());
+      refreshRemoteTracks();
+    });
+    room.on(RoomEvent.Disconnected, () => {
+      document.querySelectorAll('.livekit-audio').forEach(el => el.remove());
+    });
     room.on(RoomEvent.ParticipantDisconnected, refreshRemoteTracks);
     meetingApi.token(id)
       .then(credentials => room.connect(credentials.url, credentials.token))
