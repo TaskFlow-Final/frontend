@@ -1,4 +1,6 @@
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/$/, '');
+const configuredApiUrl = import.meta.env.VITE_API_URL;
+const defaultApiUrl = 'https://taskflow-backend-ivsy.onrender.com';
+const API_URL = (configuredApiUrl || defaultApiUrl).replace(/\/+$/, '');
 
 export function getToken() {
   return localStorage.getItem('taskflow_token');

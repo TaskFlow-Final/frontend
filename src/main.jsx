@@ -566,10 +566,13 @@ function Chat({ notify, users, session }) {
     if(!active){setMessages([]);return}
     let socket;
     chatApi.messages(active.id).then(raw=>{const items=raw.map(messageView);setMessages(items);requestAnimationFrame(()=>{const targetId=requestedMessage||active.scrollMessageId;const target=targetId&&document.querySelector(`[data-message-id="${targetId}"]`);if(target)target.scrollIntoView({block:'center'});else if(streamRef.current)streamRef.current.scrollTop=streamRef.current.scrollHeight})}).catch(error=>notify(error.message));
-    const wsBase=API_URL.replace(/^http/,'ws');
-    socket=new WebSocket(`${wsBase}/ws/chat?token=${encodeURIComponent(getToken())}&group=${active.id}`);
-    socket.onmessage=event=>{try{const payload=JSON.parse(event.data);if(payload.event==='message'){const incoming=messageView(payload.data);setMessages(items=>items.some(item=>item.id===incoming.id)?items:[...items,incoming])}}catch{}};
-    return()=>socket?.close();
+    const wsBase=(API_URL||window.location.origin).replace(/^http/,'ws');
+    try {
+      socket=new WebSocket(`${wsBase}/ws/chat?token=${encodeURIComponent(getToken())}&group=${active.id}`);
+      socket.onmessage=event=>{try{const payload=JSON.parse(event.data);if(payload.event==='message'){const incoming=messageView(payload.data);setMessages(items=>items.some(item=>item.id===incoming.id)?items:[...items,incoming])}}catch{}};
+    } catch {}
+    const poll=setInterval(()=>chatApi.messages(active.id).then(raw=>setMessages(current=>{const next=raw.map(messageView);return next.length===current.length&&next.every((item,index)=>item.id===current[index]?.id)?current:next})).catch(()=>{}),2500);
+    return()=>{clearInterval(poll);socket?.close()};
   },[active?.id]);
   useEffect(()=>{if(!active||!messages.length||active.scrollMessageId)return;const last=messages[messages.length-1];chatApi.markRead(active.id,{lastReadMessageId:last.id,scrollMessageId:last.id}).then(updated=>setGroups(items=>items.map(item=>item.id===updated.id?updated:item))).catch(()=>{})},[messages.length,active?.id]);
   const rememberScroll=event=>{const node=event.currentTarget;clearTimeout(scrollTimer.current);scrollTimer.current=setTimeout(()=>{if(!node?.isConnected)return;const elements=[...node.querySelectorAll('[data-message-id]')];const first=elements.find(element=>element.offsetTop+element.offsetHeight>=node.scrollTop);const atBottom=node.scrollHeight-node.scrollTop-node.clientHeight<70;const last=messages[messages.length-1];if(active&&first)chatApi.markRead(active.id,{lastReadMessageId:atBottom?last?.id:active.lastReadMessageId,scrollMessageId:atBottom?last?.id:first.dataset.messageId}).then(updated=>{setGroups(items=>items.map(item=>item.id===updated.id?updated:item));setActive(updated)}).catch(()=>{})},500)};

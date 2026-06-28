@@ -7,7 +7,8 @@ npm install
 npm run dev
 ```
 
-Copy `.env.example` to `.env` to use a non-default backend URL.
+The frontend uses `https://taskflow-backend-ivsy.onrender.com` by default.
+Set `VITE_API_URL` in `.env` to use a different backend URL.
 
 ```bash
 npm run build
