@@ -1,0 +1,14 @@
+.message-composer button.recording {
+  color: var(--danger);
+  animation: record-pulse 1s infinite;
+}
+
+@keyframes record-pulse {
+  50% { opacity: 0.35; }
+}
+
+.waiting-tile > svg {
+  width: 42px;
+  height: 42px;
+  color: var(--muted2);
+}
